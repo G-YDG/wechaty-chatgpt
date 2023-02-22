@@ -14,6 +14,8 @@ const wechatBot = WechatyBuilder.build({
     },
 });
 
+const startTime = (new Date()).getTime();
+
 wechatBot
     .on('scan', async (qrcode, status) => {
         console.log(`请打开二维码链接，进行扫码登录: ${status}\nhttps://wechaty.js.org/qrcode/${encodeURIComponent(qrcode)}`)
@@ -26,29 +28,31 @@ wechatBot
     })
     .on('message', async message => {
         const talker = message.talker();
-        const listener = message.listener();
         const room = message.room();
-        const listenerName = listener.name();
         let content = message.text();
 
         if (!message.type() === wechatBot.Message.Type.Text) {
-            console.log(`消息类型: ${message.type()}, 内容: ${message.text()}`);
+            console.log(`消息类型: ${message.type()}，内容: ${message.text()}`);
+            return null;
+        }
+
+        if (message.date().getTime() < startTime) {
+            await printfMessage(room, talker, content, '历史消息，忽略回复。')
             return null;
         }
 
         if (room) {
             if (await message.mentionSelf()) {
-                const groupContent = content.replace(`@${listenerName}`, '');
-                if (groupContent) {
-                    content = content.trim();
-                    if (content.startsWith('/c ')) {
-                        await gptReply(room, talker, content.replace('/c ', ''));
-                    }
-                    if (content.startsWith('/chatgpt ')) {
-                        await gptReply(room, talker, content.replace('/chatgpt ', ''));
+                const listener = message.listener();
+                if (listener) {
+                    const groupContent = content.replace(`@${listener.name()}`, '');
+                    if (groupContent) {
+                        await gptReply(room, talker, content);
+                        return null;
                     }
                 }
             }
+            await printfMessage(room, talker, content)
         } else {
             if (!talker.self()) {
                 await gptReply(null, talker, content);
@@ -98,13 +102,13 @@ async function send(talker, message) {
 
 async function printfMessage(room, talker, content, replyContent) {
     const talkerName = await talker.name();
-    let logContent = `Contact: <${talkerName}>, Content: ${content}`;
+    let logContent = `<${talkerName}>: ${content}`;
     if (replyContent) {
-        logContent = logContent + `, ReplyContent: ${replyContent}`;
+        logContent = logContent + `， Reply: ${replyContent}`;
     }
     if (room) {
         const roomTopic = await room.topic();
-        logContent = `RoomName: ${roomTopic}, ` + logContent;
+        logContent = `群聊<${roomTopic}>- ` + logContent;
     }
     console.log(logContent);
 }
