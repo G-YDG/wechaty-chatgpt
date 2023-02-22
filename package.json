@@ -1,0 +1,21 @@
+{
+  "name": "wechaty-chatgpt",
+  "version": "1.0.0",
+  "description": "wechat robot with chatgpt",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "chatgpt": "node index.js"
+  },
+  "keywords": [
+    "wechaty",
+    "chatgpt"
+  ],
+  "author": "g-ydg",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "chatgpt": "^4.2.0",
+    "wechaty": "^1.20.2",
+    "wechaty-puppet-wechat": "^1.18.4"
+  }
+}
